@@ -1,0 +1,15 @@
+# Firebase secrets
+js/firebase-config.js
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.log
+
+# Firebase
+.firebase/
+firebase-debug.log

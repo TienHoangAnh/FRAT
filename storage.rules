@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /employees/avatar/{fileName} {
+      allow read, write: if true;
+    }
+    match /attendance/snapshots/{year}/{month}/{day}/{fileName} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>FRAT — AI Face Attendance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loader-ring"></div>
+      <p class="loader-text">INITIALIZING AI SYSTEMS</p>
+      <p id="loadingStatus" class="loader-sub">Loading neural models...</p>
+      <div class="loader-progress"><div id="loaderBar" class="loader-bar"></div></div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Header -->
+    <header class="header glass">
+      <div class="header-brand">
+        <span class="brand-icon">◈</span>
+        <div>
+          <h1>FRAT</h1>
+          <span class="brand-sub">Face Recognition Attendance Terminal</span>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div id="clockDisplay" class="clock">00:00:00</div>
+        <div id="firebaseStatus" class="connection-badge offline" title="Firestore">
+          <span class="dot"></span>
+          <span class="label">OFFLINE</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-tabs glass">
+      <button class="nav-tab active" data-tab="camera" type="button">
+        <span class="tab-icon">◎</span> Camera
+      </button>
+      <button class="nav-tab" data-tab="employees" type="button">
+        <span class="tab-icon">◉</span> Employees
+      </button>
+      <button class="nav-tab" data-tab="history" type="button">
+        <span class="tab-icon">▤</span> History
+      </button>
+      <button class="nav-tab" data-tab="analytics" type="button">
+        <span class="tab-icon">◆</span> Analytics
+      </button>
+      <button id="btnKiosk" class="nav-tab kiosk-btn" type="button" title="Kiosk fullscreen">
+        <span class="tab-icon">⛶</span>
+      </button>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <!-- CAMERA TAB -->
+      <section id="tab-camera" class="tab-panel active">
+        <div class="camera-layout">
+          <div class="camera-viewport glass">
+            <video id="videoEl" autoplay playsinline muted></video>
+            <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
+            <div class="scan-frame">
+              <div class="corner tl"></div>
+              <div class="corner tr"></div>
+              <div class="corner bl"></div>
+              <div class="corner br"></div>
+              <div class="scan-line"></div>
+            </div>
+            <div id="cameraPlaceholder" class="camera-placeholder">
+              <div class="placeholder-icon">📷</div>
+              <p>Initializing camera...</p>
+            </div>
+          </div>
+
+          <aside class="camera-sidebar">
+            <div class="status-card glass">
+              <h3>AI STATUS</h3>
+              <p id="aiStatus" class="ai-status scanning">SCANNING...</p>
+              <div class="confidence-wrap">
+                <label>Confidence</label>
+                <div class="confidence-bar">
+                  <div id="confidenceFill" class="confidence-fill"></div>
+                </div>
+                <span id="confidenceValue" class="confidence-value">0%</span>
+              </div>
+            </div>
+
+            <div id="resultCard" class="result-card glass hidden">
+              <div id="resultIcon" class="result-icon success">✓</div>
+              <h3 id="resultTitle">—</h3>
+              <p id="resultSubtitle" class="result-sub">—</p>
+              <div class="result-meta">
+                <div><span>Code</span><strong id="resultCode">—</strong></div>
+                <div><span>Dept</span><strong id="resultDept">—</strong></div>
+                <div><span>Time</span><strong id="resultTime">—</strong></div>
+              </div>
+            </div>
+
+            <div class="settings-mini glass">
+              <label>
+                Threshold
+                <input type="range" id="thresholdSlider" min="50" max="95" value="70" />
+                <span id="thresholdLabel">70%</span>
+              </label>
+              <label>
+                Cooldown (s)
+                <input type="number" id="cooldownInput" min="10" max="120" value="30" />
+              </label>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- EMPLOYEES TAB -->
+      <section id="tab-employees" class="tab-panel">
+        <div class="panel-header">
+          <h2>Employee Management</h2>
+          <button id="btnAddEmployee" class="btn primary" type="button">+ Add Employee</button>
+        </div>
+        <div id="employeesGrid" class="employees-grid"></div>
+      </section>
+
+      <!-- HISTORY TAB -->
+      <section id="tab-history" class="tab-panel">
+        <div class="panel-header">
+          <h2>Attendance History</h2>
+          <div class="panel-actions">
+            <input type="date" id="historyDateFilter" class="input" />
+            <input type="search" id="historySearch" class="input" placeholder="Search name or code..." />
+            <button id="btnExportCsv" class="btn secondary" type="button">Export CSV</button>
+          </div>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+
+      <!-- ANALYTICS TAB -->
+      <section id="tab-analytics" class="tab-panel">
+        <div class="stats-grid">
+          <div class="stat-card glass">
+            <span class="stat-label">Total Employees</span>
+            <span id="statTotalEmployees" class="stat-value">0</span>
+          </div>
+          <div class="stat-card glass accent-blue">
+            <span class="stat-label">Checked In Today</span>
+            <span id="statCheckedIn" class="stat-value">0</span>
+          </div>
+          <div class="stat-card glass accent-purple">
+            <span class="stat-label">Absent Today</span>
+            <span id="statAbsent" class="stat-value">0</span>
+          </div>
+          <div class="stat-card glass accent-cyan">
+            <span class="stat-label">Total Scans Today</span>
+            <span id="statTotalScans" class="stat-value">0</span>
+          </div>
+        </div>
+        <div class="analytics-charts glass">
+          <h3>Recent Check-ins</h3>
+          <div id="recentCheckins" class="recent-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Employee Modal -->
+  <dialog id="employeeModal" class="modal glass">
+    <form id="employeeForm" class="modal-form">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add Employee</h2>
+        <button type="button" class="btn-close" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-face-upload">
+          <div id="facePreview" class="face-preview">
+            <span>Upload face photo</span>
+          </div>
+          <input type="file" id="faceFileInput" accept="image/*" hidden />
+          <button type="button" id="btnPickFace" class="btn secondary">Choose Photo</button>
+          <p id="faceUploadStatus" class="hint">AI will generate face descriptor</p>
+        </div>
+        <div class="form-grid">
+          <label>Full Name <input name="name" required /></label>
+          <label>Employee Code <input name="employeeCode" required /></label>
+          <label>Role <input name="role" /></label>
+          <label>Department <input name="department" /></label>
+          <label>Date of Birth <input name="dob" type="date" /></label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn ghost" data-close-modal>Cancel</button>
+        <button type="submit" class="btn primary" id="btnSaveEmployee">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Snapshot preview modal -->
+  <dialog id="snapshotModal" class="modal glass">
+    <div class="modal-header">
+      <h2>Scan Evidence</h2>
+      <button type="button" class="btn-close" data-close-snapshot>&times;</button>
+    </div>
+    <img id="snapshotPreviewImg" alt="Attendance snapshot" />
+    <p id="snapshotMeta" class="snapshot-meta"></p>
+  </dialog>
+
+  <!-- TensorFlow + face-api -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/dist/face-api.min.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+
+  <!-- App config (copy from firebase-config.example.js) -->
+  <script src="js/firebase-config.js"></script>
+
+  <!-- Modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
