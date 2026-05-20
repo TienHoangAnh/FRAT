@@ -12,12 +12,33 @@ import { EmployeesManager } from './employees-manager.js';
 import { AttendanceManager } from './attendance-manager.js';
 import { AnalyticsManager } from './analytics.js';
 
-/** ES module có thể chạy trước khi script compat trên gstatic gắn window.firebase — chờ tối đa vài giây */
+/** Script classic trong body có thể chưa xong khi module chạy — chờ global có sẵn */
 function waitForFirebaseGlobal(maxMs = 8000) {
   const start = Date.now();
   return new Promise((resolve) => {
     function tick() {
       if (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') {
+        resolve(true);
+        return;
+      }
+      if (Date.now() - start >= maxMs) {
+        resolve(false);
+        return;
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  });
+}
+
+/** TF.js + face-api load từ CDN — đợi cả hai trước khi loadModels */
+function waitForTfAndFaceApi(maxMs = 20000) {
+  const start = Date.now();
+  return new Promise((resolve) => {
+    function tick() {
+      const tfOk = typeof tf !== 'undefined' && typeof tf.ready === 'function';
+      const apiOk = typeof faceapi !== 'undefined' && faceapi?.nets?.tinyFaceDetector;
+      if (tfOk && apiOk) {
         resolve(true);
         return;
       }
@@ -52,12 +73,19 @@ async function bootstrap() {
     ui.toast('Demo mode: configure js/firebase-config.js for Firestore', 'info');
   }
 
-  // Load AI models
+  const aiLibsOk = await waitForTfAndFaceApi();
+  if (!aiLibsOk) {
+    ui.setLoading(0, 'TensorFlow / face-api chưa tải (CDN jsdelivr)');
+    ui.toast('Không tải được TF.js hoặc face-api — mở F12 Console, kiểm tra mạng / adblock.', 'error');
+    return;
+  }
+
+  // Load AI models (weights từ CDN)
   try {
     await loadModels((pct, msg) => ui.setLoading(pct, msg));
   } catch (err) {
-    ui.setLoading(0, 'Failed to load AI models');
-    ui.toast('AI model load failed. Check network.', 'error');
+    ui.setLoading(0, err?.message || 'AI models failed');
+    ui.toast(err?.message || 'AI model load failed', 'error');
     console.error(err);
     return;
   }
