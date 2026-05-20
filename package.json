@@ -1,0 +1,9 @@
+{
+  "name": "frat-face-attendance",
+  "private": true,
+  "scripts": {
+    "env:build": "node scripts/env-to-firebase-config.mjs",
+    "dev": "npm run env:build && npx serve . -p 3456",
+    "predeploy": "npm run env:build"
+  }
+}
