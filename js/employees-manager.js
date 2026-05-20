@@ -2,14 +2,7 @@
  * Employee CRUD UI & face enrollment (descriptor only — Firestore)
  */
 import { extractDescriptorFromImage } from './face-ai.js';
-import {
-  fetchEmployees,
-  saveEmployee,
-  deleteEmployee,
-  isFirebaseReady,
-  initFirebase,
-  getFirebaseInitFailureReason,
-} from './firebase-service.js';
+import { fetchEmployees, saveEmployee, deleteEmployee, isFirebaseReady } from './firebase-service.js';
 
 export class EmployeesManager {
   constructor(ui) {
@@ -119,10 +112,8 @@ export class EmployeesManager {
       return;
     }
 
-    initFirebase();
     if (!isFirebaseReady()) {
-      const detail = getFirebaseInitFailureReason();
-      this.ui.toast(detail || 'Firebase chưa sẵn sàng — mở F12 Console xem lỗi.', 'error');
+      this.ui.toast('Configure Firebase first (js/firebase-config.js)', 'error');
       return;
     }
 

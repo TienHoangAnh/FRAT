@@ -6,33 +6,14 @@ import { FIREBASE_CONFIG } from './firebase-config.js';
 
 let db = null;
 let connected = false;
-/** @type {string | null} */
-let lastInitFailure = null;
-
-export function getFirebaseInitFailureReason() {
-  return lastInitFailure;
-}
 
 export function initFirebase() {
-  lastInitFailure = null;
-
   if (typeof firebase === 'undefined') {
-    lastInitFailure =
-      'Firebase SDK chưa tải (mạng, AdBlock, hoặc script gstatic.com bị chặn). Tải lại trang.';
     console.warn('[Firebase] SDK not loaded');
     return false;
   }
 
-  if (typeof firebase.firestore !== 'function') {
-    lastInitFailure =
-      'Firestore compat chưa load — kiểm tra index.html có firebase-firestore-compat.js.';
-    console.warn('[Firebase] firestore() not available');
-    return false;
-  }
-
   if (!FIREBASE_CONFIG?.projectId || FIREBASE_CONFIG.projectId === 'YOUR_PROJECT_ID') {
-    lastInitFailure =
-      'Chưa cấu hình Firebase: sửa js/firebase-config.js hoặc chạy npm run env:build từ .env';
     console.warn('[Firebase] Configure js/firebase-config.js');
     return false;
   }
@@ -45,10 +26,7 @@ export function initFirebase() {
     connected = true;
     return true;
   } catch (err) {
-    lastInitFailure = err?.message || String(err);
     console.error('[Firebase] Init failed:', err);
-    connected = false;
-    db = null;
     return false;
   }
 }
