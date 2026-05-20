@@ -12,6 +12,25 @@ import { EmployeesManager } from './employees-manager.js';
 import { AttendanceManager } from './attendance-manager.js';
 import { AnalyticsManager } from './analytics.js';
 
+/** ES module có thể chạy trước khi script compat trên gstatic gắn window.firebase — chờ tối đa vài giây */
+function waitForFirebaseGlobal(maxMs = 8000) {
+  const start = Date.now();
+  return new Promise((resolve) => {
+    function tick() {
+      if (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') {
+        resolve(true);
+        return;
+      }
+      if (Date.now() - start >= maxMs) {
+        resolve(false);
+        return;
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  });
+}
+
 async function bootstrap() {
   const ui = new UIController();
   initTabs();
@@ -20,7 +39,8 @@ async function bootstrap() {
   const video = document.getElementById('videoEl');
   const canvas = document.getElementById('overlayCanvas');
 
-  // Firebase
+  // Firebase — đợi SDK global (tránh race với type="module")
+  await waitForFirebaseGlobal();
   const firebaseOk = initFirebase();
   ui.setFirebaseStatus(firebaseOk && navigator.onLine);
 
