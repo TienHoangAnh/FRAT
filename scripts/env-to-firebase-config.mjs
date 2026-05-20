@@ -58,7 +58,7 @@ const lines = [
   ' * Auto-generated from .env — do not edit manually.',
   ' * Run: npm run env:build',
   ' */',
-  'const FIREBASE_CONFIG = {',
+  'export const FIREBASE_CONFIG = {',
   `  apiKey: '${escapeJs(env.FIREBASE_API_KEY)}',`,
   `  authDomain: '${escapeJs(env.FIREBASE_AUTH_DOMAIN)}',`,
   `  projectId: '${escapeJs(env.FIREBASE_PROJECT_ID)}',`,

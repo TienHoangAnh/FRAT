@@ -2,17 +2,18 @@
  * Firebase Firestore service layer
  */
 import { CONFIG, todayDateString } from './config.js';
+import { FIREBASE_CONFIG } from './firebase-config.js';
 
 let db = null;
 let connected = false;
 
 export function initFirebase() {
-  if (typeof firebase === 'undefined' || typeof FIREBASE_CONFIG === 'undefined') {
-    console.warn('[Firebase] SDK or config missing');
+  if (typeof firebase === 'undefined') {
+    console.warn('[Firebase] SDK not loaded');
     return false;
   }
 
-  if (!FIREBASE_CONFIG.projectId || FIREBASE_CONFIG.projectId === 'YOUR_PROJECT_ID') {
+  if (!FIREBASE_CONFIG?.projectId || FIREBASE_CONFIG.projectId === 'YOUR_PROJECT_ID') {
     console.warn('[Firebase] Configure js/firebase-config.js');
     return false;
   }
