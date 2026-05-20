@@ -7,15 +7,9 @@ export const CONFIG = {
   DEFAULT_CONFIDENCE_THRESHOLD: 70,
   DEFAULT_COOLDOWN_MS: 30_000,
   SCAN_INTERVAL_MS: 150,
-  SNAPSHOT_MAX_WIDTH: 640,
-  SNAPSHOT_QUALITY: 0.82,
   COLLECTIONS: {
     EMPLOYEES: 'employees',
     ATTENDANCE: 'attendance_logs',
-  },
-  STORAGE_PATHS: {
-    AVATARS: 'employees/avatar',
-    SNAPSHOTS: 'attendance/snapshots',
   },
 };
 

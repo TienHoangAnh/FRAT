@@ -202,16 +202,6 @@
     </form>
   </dialog>
 
-  <!-- Snapshot preview modal -->
-  <dialog id="snapshotModal" class="modal glass">
-    <div class="modal-header">
-      <h2>Scan Evidence</h2>
-      <button type="button" class="btn-close" data-close-snapshot>&times;</button>
-    </div>
-    <img id="snapshotPreviewImg" alt="Attendance snapshot" />
-    <p id="snapshotMeta" class="snapshot-meta"></p>
-  </dialog>
-
   <!-- TensorFlow + face-api -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/dist/face-api.min.js"></script>
@@ -219,7 +209,6 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
   <!-- App config (copy from firebase-config.example.js) -->
   <script src="js/firebase-config.js"></script>

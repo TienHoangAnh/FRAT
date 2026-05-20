@@ -1,5 +1,5 @@
 /**
- * Attendance history UI, CSV export, snapshot preview
+ * Attendance history UI & CSV export (Firestore only)
  */
 import { fetchAttendanceLogs, isFirebaseReady } from './firebase-service.js';
 import { todayDateString, formatTime } from './config.js';
@@ -11,9 +11,6 @@ export class AttendanceManager {
     this.listEl = document.getElementById('historyList');
     this.dateFilter = document.getElementById('historyDateFilter');
     this.searchInput = document.getElementById('historySearch');
-    this.snapshotModal = document.getElementById('snapshotModal');
-    this.snapshotImg = document.getElementById('snapshotPreviewImg');
-    this.snapshotMeta = document.getElementById('snapshotMeta');
 
     if (this.dateFilter) {
       this.dateFilter.value = todayDateString();
@@ -22,10 +19,6 @@ export class AttendanceManager {
     this.dateFilter?.addEventListener('change', () => this.refresh());
     this.searchInput?.addEventListener('input', debounce(() => this.refresh(), 300));
     document.getElementById('btnExportCsv')?.addEventListener('click', () => this.exportCsv());
-
-    document.querySelectorAll('[data-close-snapshot]').forEach((btn) => {
-      btn.addEventListener('click', () => this.snapshotModal?.close());
-    });
   }
 
   async refresh() {
@@ -63,7 +56,6 @@ export class AttendanceManager {
       'Date',
       'Status',
       'Device ID',
-      'Snapshot URL',
     ];
 
     const rows = this.logs.map((l) => [
@@ -75,7 +67,6 @@ export class AttendanceManager {
       l.dateString,
       l.status,
       l.deviceId,
-      l.snapshotUrl,
     ]);
 
     const csv = [headers, ...rows]
@@ -92,19 +83,9 @@ export class AttendanceManager {
     this.ui.toast('CSV exported', 'success');
   }
 
-  _showSnapshot(log) {
-    if (!log.snapshotUrl) {
-      this.ui.toast('No snapshot for this record', 'info');
-      return;
-    }
-    this.snapshotImg.src = log.snapshotUrl;
-    this.snapshotMeta.textContent = `${log.employeeName} · ${formatTime(new Date(log.checkinTime))} · ${log.confidence?.toFixed?.(1) || log.confidence}%`;
-    this.snapshotModal.showModal();
-  }
-
   _renderEmpty(msg) {
     if (this.listEl) {
-      this.listEl.innerHTML = `<div class="empty-state glass"><p>${msg}</p></div>`;
+      this.listEl.innerHTML = `<div class="empty-state glass"><p>${esc(msg)}</p></div>`;
     }
   }
 
@@ -119,28 +100,25 @@ export class AttendanceManager {
     this.listEl.innerHTML = this.logs
       .map((l) => {
         const time = l.checkinTime ? formatTime(new Date(l.checkinTime)) : '—';
-        const thumb = l.snapshotUrl
-          ? l.snapshotUrl
-          : 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 72 72%22%3E%3Crect fill=%22%231a2540%22 width=%2272%22 height=%2272%22/%3E%3C/svg%3E';
         const statusClass = l.status === 'success' ? 'success' : 'unknown';
 
         return `
-        <article class="history-item glass" data-id="${l.id}">
-          <img src="${thumb}" alt="Snapshot" loading="lazy" />
+        <article class="history-item glass">
+          <div class="hi-avatar">${esc(initial(l.employeeName))}</div>
           <div>
             <div class="hi-name">${esc(l.employeeName)}</div>
-            <div class="hi-meta">${esc(l.employeeCode || '—')} · ${esc(l.department || '')} · ${time}</div>
+            <div class="hi-meta">${esc(l.employeeCode || '—')} · ${time}</div>
             <span class="badge ${statusClass}">${l.status}</span>
           </div>
           <div class="hi-confidence">${Number(l.confidence || 0).toFixed(1)}%</div>
         </article>`;
       })
       .join('');
-
-    this.listEl.querySelectorAll('.history-item').forEach((item, i) => {
-      item.addEventListener('click', () => this._showSnapshot(this.logs[i]));
-    });
   }
+}
+
+function initial(name) {
+  return (name || '?').trim().charAt(0).toUpperCase() || '?';
 }
 
 function esc(str) {

@@ -6,8 +6,7 @@
       "**/.*",
       "**/node_modules/**",
       "js/firebase-config.example.js",
-      "firestore.rules",
-      "storage.rules"
+      "firestore.rules"
     ],
     "rewrites": [
       {

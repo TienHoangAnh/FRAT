@@ -1,10 +1,9 @@
 /**
- * Firebase Firestore & Storage service layer
+ * Firebase Firestore service layer
  */
 import { CONFIG, todayDateString } from './config.js';
 
 let db = null;
-let storage = null;
 let connected = false;
 
 export function initFirebase() {
@@ -23,7 +22,6 @@ export function initFirebase() {
       firebase.initializeApp(FIREBASE_CONFIG);
     }
     db = firebase.firestore();
-    storage = firebase.storage();
     connected = true;
     return true;
   } catch (err) {
@@ -72,7 +70,6 @@ export async function saveEmployee(data, employeeId = null) {
     dob: data.dob || '',
   };
 
-  if (data.avatarUrl) payload.avatarUrl = data.avatarUrl;
   if (data.descriptor?.length) payload.descriptor = data.descriptor;
 
   if (employeeId) {
@@ -80,7 +77,6 @@ export async function saveEmployee(data, employeeId = null) {
     return employeeId;
   }
 
-  payload.avatarUrl = data.avatarUrl || '';
   payload.descriptor = data.descriptor || [];
   payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
 
@@ -103,7 +99,6 @@ export async function saveAttendanceLog(log) {
     employeeName: log.employeeName || 'Unknown',
     employeeCode: log.employeeCode || '',
     confidence: log.confidence,
-    snapshotUrl: log.snapshotUrl || '',
     checkinTime: log.checkinTime,
     dateString: log.dateString || todayDateString(),
     deviceId: log.deviceId,
@@ -120,7 +115,7 @@ export async function fetchAttendanceLogs({ dateString, search = '' } = {}) {
   if (!db) return [];
 
   const date = dateString || todayDateString();
-  let query = db
+  const query = db
     .collection(CONFIG.COLLECTIONS.ATTENDANCE)
     .where('dateString', '==', date)
     .orderBy('checkinTime', 'desc');
@@ -159,27 +154,4 @@ export async function countTodayScans() {
     .where('dateString', '==', todayDateString())
     .get();
   return snap.size;
-}
-
-/* ─── Storage ─── */
-
-export async function uploadFile(path, blob) {
-  if (!storage) throw new Error('Firebase Storage not configured');
-  const ref = storage.ref().child(path);
-  const snap = await ref.put(blob, { contentType: blob.type || 'image/jpeg' });
-  return snap.ref.getDownloadURL();
-}
-
-export function buildSnapshotPath() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  const ts = now.getTime();
-  return `${CONFIG.STORAGE_PATHS.SNAPSHOTS}/${y}/${m}/${d}/scan_${ts}.jpg`;
-}
-
-export function buildAvatarPath(employeeCode) {
-  const safe = (employeeCode || 'emp').replace(/[^a-zA-Z0-9_-]/g, '_');
-  return `${CONFIG.STORAGE_PATHS.AVATARS}/${safe}_${Date.now()}.jpg`;
 }

@@ -3,13 +3,7 @@
  */
 import { CONFIG, getDeviceId, formatTime, todayDateString } from './config.js';
 import { detectFaceFromVideo, matchDescriptor, drawDetection, setEmployeeCache } from './face-ai.js';
-import { captureSnapshot } from './camera.js';
-import {
-  saveAttendanceLog,
-  uploadFile,
-  buildSnapshotPath,
-  isFirebaseReady,
-} from './firebase-service.js';
+import { saveAttendanceLog, isFirebaseReady } from './firebase-service.js';
 
 export class FaceScanner {
   constructor({ video, canvas, ui }) {
@@ -21,8 +15,8 @@ export class FaceScanner {
     this.cooldownMap = new Map();
     this.rafId = null;
     this.lastDetection = null;
-    this.threshold = CONFIG.DEFAULT_CONFIDENCE_THRESHOLD;
-    this.cooldownMs = CONFIG.DEFAULT_COOLDOWN_MS;
+    this.threshold = 70;
+    this.cooldownMs = 30_000;
     this.employees = [];
   }
 
@@ -96,7 +90,7 @@ export class FaceScanner {
           return;
         }
 
-        await this._handleMatch(result.match, result.confidence, detection);
+        await this._handleMatch(result.match, result.confidence);
       } else {
         this.ui.showUnknown(result.confidence);
         if (isFirebaseReady()) {
@@ -119,20 +113,8 @@ export class FaceScanner {
     this.cooldownMap.set(employeeId, Date.now() + this.cooldownMs);
   }
 
-  async _handleMatch(employee, confidence, detection) {
-    this.ui.setAiStatus('matching', 'CAPTURING EVIDENCE...');
-
-    let snapshotUrl = '';
-
-    try {
-      const blob = await captureSnapshot(CONFIG.SNAPSHOT_MAX_WIDTH, CONFIG.SNAPSHOT_QUALITY);
-      if (blob && isFirebaseReady()) {
-        const path = buildSnapshotPath();
-        snapshotUrl = await uploadFile(path, blob);
-      }
-    } catch (err) {
-      console.warn('[Scanner] Snapshot upload failed:', err);
-    }
+  async _handleMatch(employee, confidence) {
+    this.ui.setAiStatus('matching', 'SAVING CHECK-IN...');
 
     const checkinTime = new Date().toISOString();
     const deviceId = getDeviceId();
@@ -143,7 +125,6 @@ export class FaceScanner {
         employeeName: employee.name,
         employeeCode: employee.employeeCode,
         confidence,
-        snapshotUrl,
         checkinTime,
         dateString: todayDateString(),
         deviceId,
@@ -165,18 +146,11 @@ export class FaceScanner {
     this._setCooldown(key);
 
     try {
-      const blob = await captureSnapshot(CONFIG.SNAPSHOT_MAX_WIDTH, CONFIG.SNAPSHOT_QUALITY);
-      let snapshotUrl = '';
-      if (blob) {
-        snapshotUrl = await uploadFile(buildSnapshotPath(), blob);
-      }
-
       await saveAttendanceLog({
         employeeId: '',
         employeeName: 'Unknown',
         employeeCode: '',
         confidence,
-        snapshotUrl,
         checkinTime: new Date().toISOString(),
         dateString: todayDateString(),
         deviceId: getDeviceId(),
