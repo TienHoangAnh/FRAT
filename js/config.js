@@ -2,11 +2,7 @@
  * Application configuration & constants
  */
 export const CONFIG = {
-  /** Phải trùng phiên bản @vladmandic/face-api trong index.html */
-  MODEL_BASE_URLS: [
-    'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/model/',
-    'https://unpkg.com/@vladmandic/face-api@1.7.14/model/',
-  ],
+  MODEL_BASE_URL: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/',
   FACE_MATCH_DISTANCE: 0.55,
   DEFAULT_CONFIDENCE_THRESHOLD: 70,
   DEFAULT_COOLDOWN_MS: 30_000,

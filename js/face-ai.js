@@ -10,59 +10,23 @@ export function areModelsLoaded() {
   return modelsLoaded;
 }
 
-function getModelBases() {
-  const urls = CONFIG.MODEL_BASE_URLS;
-  if (Array.isArray(urls) && urls.length) return urls;
-  return CONFIG.MODEL_BASE_URL ? [CONFIG.MODEL_BASE_URL] : [];
-}
-
 export async function loadModels(onProgress) {
   if (modelsLoaded) return;
 
-  if (typeof tf !== 'undefined' && typeof tf.ready === 'function') {
-    await tf.ready();
-  }
-
-  if (typeof faceapi === 'undefined' || !faceapi?.nets?.tinyFaceDetector) {
-    throw new Error(
-      'face-api không có trên window — kiểm tra index.html đã tải face-api.min.js (jsdelivr) chưa.'
-    );
-  }
-
-  const bases = getModelBases();
-  if (!bases.length) {
-    throw new Error('Chưa cấu hình MODEL_BASE_URLS trong config.js');
-  }
-
+  const base = CONFIG.MODEL_BASE_URL;
   const steps = [
-    { name: 'TinyFaceDetector', fn: (base) => faceapi.nets.tinyFaceDetector.loadFromUri(base) },
-    { name: 'FaceLandmark68Net', fn: (base) => faceapi.nets.faceLandmark68Net.loadFromUri(base) },
-    { name: 'FaceRecognitionNet', fn: (base) => faceapi.nets.faceRecognitionNet.loadFromUri(base) },
+    { name: 'TinyFaceDetector', fn: () => faceapi.nets.tinyFaceDetector.loadFromUri(base) },
+    { name: 'FaceLandmark68Net', fn: () => faceapi.nets.faceLandmark68Net.loadFromUri(base) },
+    { name: 'FaceRecognitionNet', fn: () => faceapi.nets.faceRecognitionNet.loadFromUri(base) },
   ];
 
-  let lastErr = null;
-
-  for (let b = 0; b < bases.length; b++) {
-    const base = bases[b];
-    try {
-      for (let i = 0; i < steps.length; i++) {
-        const pct = ((b * steps.length + i) / (bases.length * steps.length)) * 95;
-        onProgress?.(pct, `Loading ${steps[i].name}… (${base.includes('unpkg') ? 'unpkg' : 'jsdelivr'})`);
-        await steps[i].fn(base);
-      }
-      onProgress?.(100, 'AI models ready');
-      modelsLoaded = true;
-      return;
-    } catch (e) {
-      lastErr = e;
-      console.warn('[face-ai] Model load failed from', base, e);
-    }
+  for (let i = 0; i < steps.length; i++) {
+    onProgress?.((i / steps.length) * 100, `Loading ${steps[i].name}...`);
+    await steps[i].fn();
   }
 
-  const msg = lastErr?.message || String(lastErr);
-  throw new Error(
-    `Không tải được model AI (${msg}). Thử: VPN/mạng khác, tắt adblock, mở bằng http://localhost — không dùng file:// .`
-  );
+  onProgress?.(100, 'AI models ready');
+  modelsLoaded = true;
 }
 
 export function setEmployeeCache(employees) {
